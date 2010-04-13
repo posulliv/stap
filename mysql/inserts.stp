@@ -1,0 +1,10 @@
+
+probe process("/home/posulliv/repos/mysql/mysql-5.5.2-m2/5.5.2/libexec/mysqld").mark("insert__row__start")
+{
+  printf("thread %d started insert on CPU %d\n", tid(), cpu())
+}
+
+probe process("/home/posulliv/repos/mysql/mysql-5.5.2-m2/5.5.2/libexec/mysqld").mark("insert__row__done")
+{
+  printf("thread %d finished insert on CPU %d\n", tid(), cpu())
+}

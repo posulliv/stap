@@ -1,0 +1,30 @@
+#!/usr/bin/stap
+
+global rdlocks
+global wrlocks
+
+probe process(@1).mark("handler__rdlock__start")
+{
+  rdlocks[tid()] = get_cycles()
+  printf("Start: Lock->Read %s.%s\n",
+         user_string($arg1), user_string($arg2))
+}
+
+probe process(@1).mark("handler__rdlock__done")
+{
+  printf("End: Lock->Read %d cycles\n",
+         get_cycles() - rdlocks[tid()])
+}
+
+probe process(@1).mark("handler__wrlock__start")
+{
+  wrlocks[tid()] = get_cycles()
+  printf("Start: Lock->Write %s.%s\n",
+         user_string($arg1), user_string($arg2))
+}
+
+probe process(@1).mark("handler__wrlock__done")
+{
+  printf("End: Lock->Write %d cycles\n",
+         get_cycles() - wrlocks[tid()])
+}

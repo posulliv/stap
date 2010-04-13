@@ -1,0 +1,35 @@
+#!/usr/bin/stap
+
+global schema_name
+global table_name
+global queries
+global used
+
+probe begin
+{
+  schema_name = @1
+  table_name = @2
+}
+
+probe process(@3).mark("query__exec__start")
+{
+  queries[tid()] = user_string($arg1)
+  used[tid()] = 0
+}
+
+probe process(@3).mark("*lock__start")
+{
+  if (schema_name == user_string($arg1) &&
+      table_name == user_string($arg2))
+  {
+    used[tid()] = 1
+  }
+}
+
+probe process(@3).mark("query__exec__done")
+{
+  if (used[tid()])
+  {
+    printf("%s;\n", queries[tid()])
+  }
+}

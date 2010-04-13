@@ -1,0 +1,22 @@
+#!/usr/bin/env stap
+
+global some_count
+
+probe process(@1).mark("*")
+{
+  some_count[tid()] = backtrace()
+}
+
+function print_top()
+{
+  foreach (tid+ in some_count)
+  {
+    print_stack(some_count[tid])
+  }
+}
+
+probe timer.s(5)
+{
+  print_top()
+  printf("----------------------------------------------------\n")
+}

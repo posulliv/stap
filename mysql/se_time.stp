@@ -1,0 +1,34 @@
+#!/usr/bin/stap
+# Script to track how much time is spent in a storage engine
+# path to executable we are probing is given as a command line
+# argument to this script
+
+global query_times
+global engine_times
+global queries
+
+probe process(@1).mark("query__start")
+{
+  query_times[tid()] = gettimeofday_us()
+  engine_times[tid()] = 0
+  queries[tid()] = user_string($arg1)
+}
+
+probe process(@1).mark("*row__start")
+{
+  engine_times[tid()] = gettimeofday_us()
+}
+
+probe process(@1).mark("*row__done")
+{
+  engine_times[tid()] = gettimeofday_us() - engine_times[tid()]
+}
+
+probe process(@1).mark("query__done")
+{
+  query_times[tid()] = gettimeofday_us() - query_times[tid()]
+  printf("%s\n", queries[tid()])
+  printf("Total: %dus Engine: %dus\n",
+         query_times[tid()],
+         engine_times[tid()])
+}

@@ -1,0 +1,21 @@
+#!/usr/bin/stap
+# simple user level profiling
+
+global backtraces
+
+probe timer.ms(5)
+{
+  if (pid() == target())
+  {
+    backtraces[ubacktrace()]++
+  }
+}
+
+probe end
+{
+  foreach (stack_trace in backtraces)
+  {
+    printf("%d samples with stack below\n", backtraces[stack_trace])
+    print_ustack(stack_trace)
+  }
+}

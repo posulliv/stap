@@ -1,0 +1,71 @@
+#!/usr/bin/stap
+# Script that tracks what a query is doing
+
+global lock_times
+global filesort_times
+global query_times
+global engine_times
+global net_times
+global queries
+
+probe process(@1).mark("query__start")
+{
+  query_times[tid()] = gettimeofday_us()
+  engine_times[tid()] = 0
+  lock_times[tid()] = 0
+  filesort_times[tid()] = 0
+  net_times[tid()] = 0
+  queries[tid()] = user_string($arg1)
+}
+
+probe process(@1).mark("net__*__start")
+{
+  net_times[tid()] = gettimeofday_us()
+}
+
+probe process(@1).mark("net__*__done")
+{
+  net_times[tid()] = gettimeofday_us() - net_times[tid()]
+}
+
+probe process(@1).mark("*row__start")
+{
+  engine_times[tid()] = gettimeofday_us()
+}
+
+probe process(@1).mark("*row__done")
+{
+  engine_times[tid()] = gettimeofday_us() - engine_times[tid()]
+}
+
+probe process(@1).mark("*lock__start")
+{
+  lock_times[tid()] = gettimeofday_us()
+}
+
+probe process(@1).mark("*lock__done")
+{
+  lock_times[tid()] = gettimeofday_us() - lock_times[tid()]
+}
+
+probe process(@1).mark("filesort__start")
+{
+  filesort_times[tid()] = gettimeofday_us()
+}
+
+probe process(@1).mark("filesort__done")
+{
+  filesort_times[tid()] = gettimeofday_us() - filesort_times[tid()]
+}
+
+probe process(@1).mark("query__done")
+{
+  query_times[tid()] = gettimeofday_us() - query_times[tid()]
+  printf("%s\n", queries[tid()])
+  printf("Total: %dus Locks: %dus Engine: %dus Network: %dus Filesort: %dus\n",
+         query_times[tid()],
+         lock_times[tid()],
+         engine_times[tid()],
+         net_times[tid()],
+         filesort_times[tid()])
+}

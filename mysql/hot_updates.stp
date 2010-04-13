@@ -1,0 +1,19 @@
+#!/usr/bin/stap
+
+global tables
+
+probe 
+  process(@1).mark("update__row__start"), 
+  process(@1).mark("insert__row__start"),
+  process(@1).mark("delete__row__start")
+{
+  tables[user_string($arg1), user_string($arg2)]++
+}
+
+probe end
+{
+  foreach ([schema, table] in tables)
+  {
+    printf("%s.%s %d\n", schema, table, tables[schema, table])
+  }
+}
