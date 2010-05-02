@@ -47,9 +47,21 @@ stap -x $PROCESS -e '
 
   probe end
   {
+    i = 0
     foreach(stack_trace in backtraces)
     {
-      print_stack(stack_trace);
+      if (backtraces[stack_trace] > 1)
+      {
+        printf("%d samples with stack below\n", backtraces[stack_trace]);
+        printf("__________________\n");
+        print_stack(stack_trace);
+        printf("\n");
+        i++
+        if (i > '$STACKS')
+        {
+          exit();
+        }
+      }
     }
   }
-'
+' 
